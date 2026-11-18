@@ -199,7 +199,7 @@ Shared rules for all three adapters:
 | REQ-FAIL-02 | Every failure names service, kind, retryability, safe detail, and upstream status when available. Never upstream bodies or credentials. | SPEC 7 | S for HTTP-level (`http.py`); I for scanner mapping |
 | REQ-FAIL-03 | HTTP policy: ≤ 2 attempts; retries timeouts, transport errors, 429, 500/502/503/504; bounded numeric `Retry-After` (≤ 2 s); ≤ 1 MB identity-encoded body; invalid JSON rejected. | SPEC 7 | S (`http.py`) |
 | REQ-FAIL-04 | The scanner converts a `SourceRequestError` into its `.failure`; **any other exception** from a source becomes an `unexpected` failure for that source with a safe, generic detail. | SPEC 7 | I — see OP-03 |
-| REQ-FAIL-05 | Cancellation (`asyncio.CancelledError`) is **never** converted into a failure; it propagates. | SPEC 5, AC-08 | I |
+| REQ-FAIL-05 | A real cancellation (the running task has a pending cancel request: deadline, last waiter left, scan cancelled) is **never** converted into a failure; it propagates. A `CancelledError` a source raises on its own is an `unexpected` failure (Decision 12). | SPEC 5, AC-08 | I |
 | REQ-FAIL-06 | One failed source → partial package assessment that keeps the other successful fields. | SPEC 7, AC-06 | I |
 
 ### 3.4 Assessment assembly (one package)
