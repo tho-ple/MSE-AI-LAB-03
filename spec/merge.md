@@ -137,7 +137,8 @@ Notes:
 - Code review before each merge: A and B match `design.md` §3.1–3.3 and
   Decisions 4, 5, 8. No proposed decisions and no changes to files outside
   their ownership in any package.
-- Open for the merger: the Package C review point about a `CancelledError`
-  raised by a source (refines REQ-FAIL-05) needs a decision; known
+- The Package C review point about a `CancelledError` raised by a source is
+  decided as Decision 12 (branch `fix-source-cancellation`, merged after
+  step 4; full suite 59 passed). Known
   limitations (SingleFlight not awaited, Decision 9, Decision 11 fairness) go
   into the `EVIDENCE.md` risk section.
