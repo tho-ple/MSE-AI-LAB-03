@@ -3,7 +3,7 @@
 | Field       | Value                                                                                     |
 | ----------- | ----------------------------------------------------------------------------------------- |
 | Goal        | Two **overlapping** deps.dev calls → validated, identity-checked `SupplyChainInformation` |
-| Owner       | Michael Auer                                                                              |
+| Owner       | Michael Auß                                                                              |
 | Branch      | `task-b` (from the `main` commit that adds this file)                                     |
 | Depends on  | nothing; parallel with A and C                                                            |
 | Merge order | 2 of 3 (see `design.md` §5.2)                                                             |
