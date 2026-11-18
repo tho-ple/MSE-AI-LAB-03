@@ -129,7 +129,8 @@ Merge order and gates: `design.md` §5.2.
 | 2 | `task-b` → `bd766f6` | yes: `deps_dev.py`, own test, own section | `uv run pytest -m sources` | 27 passed, including `test_source_adapters_translate_valid_responses` (needs A + B). Full suite 32 passed / 8 failed (C open, expected) |
 | 3 | `task-c` → `9bfcd92` | yes: `cache.py`, `service.py`, own tests, own section | `uv run pytest -m "cache or orchestration or transport"` | 27 passed |
 | 4 | — | — | full quality gate | `ruff check` ✔ · `ruff format --check` ✔ (42 files) · `mypy src tests checks` ✔ (30 files) · `pytest` **58 passed** · readiness READY |
-| 5 | — | — | runtime evidence (`EVIDENCE.md`) | open |
+| 5 | `fix-source-cancellation`, `evidence` | — | runtime evidence (`EVIDENCE.md`) | Decision 12 merged (`afe2a81`, 59 passed); runtime evidence and acceptance decision recorded (`2bad197`) |
+| 6 | `video` | — | group video | presentation + narration merged (`bb62f6b`); published at https://youtu.be/v5zIaBPWbWw |
 
 Notes:
 - All three branches start from `8ec7f71`. `spec/merge.md` merged without
