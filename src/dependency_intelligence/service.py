@@ -146,21 +146,33 @@ async def _capture[T](
 ) -> tuple[T | None, SourceFailure | None]:
     """Turn one source call into a value or an attributed failure.
 
-    ``CancelledError`` is a ``BaseException`` and deliberately passes through
-    (REQ-FAIL-05). The operation is a factory so that a task cancelled before it
-    starts never leaves an un-awaited coroutine behind.
+    A real cancellation of the running task propagates unchanged (REQ-FAIL-05).
+    The operation is a factory so that a task cancelled before it starts never
+    leaves an un-awaited coroutine behind.
     """
     try:
         return await operation(), None
+    except asyncio.CancelledError:
+        # Decision 12: propagate only when this task was actually asked to cancel
+        # (deadline, last waiter gone, scan cancelled). A source raising
+        # CancelledError on its own is a fault of that source, not a cancellation.
+        task = asyncio.current_task()
+        if task is None or task.cancelling():
+            raise
+        return None, _unexpected(service, "CancelledError")
     except SourceRequestError as error:
         # The scanner knows which source it called, so attribution never depends
         # on the adapter passing the right ServiceName to the HTTP client.
         return None, replace(error.failure, service=service)
     except Exception as error:
         # Decision 3: never expose the exception message; it may carry upstream data.
-        return None, SourceFailure(
-            service,
-            FailureKind.UNEXPECTED,
-            retryable=False,
-            detail=f"unexpected {type(error).__name__}",
-        )
+        return None, _unexpected(service, type(error).__name__)
+
+
+def _unexpected(service: ServiceName, error_type: str) -> SourceFailure:
+    return SourceFailure(
+        service,
+        FailureKind.UNEXPECTED,
+        retryable=False,
+        detail=f"unexpected {error_type}",
+    )

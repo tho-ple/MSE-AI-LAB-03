@@ -24,7 +24,7 @@ from dependency_intelligence.ports import (
     SupplyChainSource,
     VulnerabilitySource,
 )
-from dependency_intelligence.service import DependencyScanner
+from dependency_intelligence.service import DependencyScanner, _capture
 
 from .fakes import (
     FakeClock,
@@ -299,12 +299,33 @@ class CancellingSupplyChainSource:
         raise asyncio.CancelledError
 
 
-async def test_cancellation_is_never_reported_as_a_failure() -> None:
-    """REQ-FAIL-05: a CancelledError from a source propagates instead of becoming a failure."""
+async def test_spontaneous_source_cancellation_is_an_unexpected_failure() -> None:
+    """Decision 12: a source raising CancelledError on its own yields a partial result."""
     scanner = build_scanner(supply_chain=CancellingSupplyChainSource())
 
+    result = await scanner.assess(DEMO)
+
+    assert [failure.service for failure in result.failures] == [ServiceName.DEPS_DEV]
+    assert result.failures[0].kind is FailureKind.UNEXPECTED
+    assert result.failures[0].detail == "unexpected CancelledError"
+    assert result.assessment is not None
+    assert result.assessment.supply_chain is None
+    assert result.assessment.metadata is not None
+
+
+async def test_real_cancellation_is_never_reported_as_a_failure() -> None:
+    """REQ-FAIL-05: when the task running a source call is cancelled, it ends cancelled."""
+    gate = StartGate(1)
+    source = FakeMetadataSource(gate=gate)
+    task = asyncio.create_task(_capture(ServiceName.PYPI, lambda: source.fetch_metadata(DEMO)))
+    await asyncio.wait_for(gate.all_started.wait(), timeout=1)
+
+    task.cancel()
     with pytest.raises(asyncio.CancelledError):
-        await scanner.assess(DEMO)
+        await task
+
+    assert task.cancelled()
+    assert gate.cancelled == 1
 
 
 async def test_failure_is_attributed_to_the_calling_source() -> None:
