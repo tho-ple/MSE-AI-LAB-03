@@ -1,13 +1,13 @@
 # Task C — TTL/LRU cache & scanner orchestration
 
-| Field | Value |
-| --- | --- |
-| Goal | A concurrency-safe TTL/LRU cache, plus `DependencyScanner`: concurrent sources, bounded packages, single-flight, cache-only-complete, cancellation |
-| Owner | _TBD_ |
-| Branch | `task-c` (from the `main` commit that adds this file) |
-| Depends on | nothing; built **only** against the ports and `tests/fakes.py`, never against the real adapters |
-| Merge order | 3 of 3 (see `design.md` §5.2) |
-| Size | large; the core of the lab |
+| Field       | Value                                                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Goal        | A concurrency-safe TTL/LRU cache, plus `DependencyScanner`: concurrent sources, bounded packages, single-flight, cache-only-complete, cancellation |
+| Owner       | Thomas Pleiner                                                                                                                                     |
+| Branch      | `task-c` (from the `main` commit that adds this file)                                                                                              |
+| Depends on  | nothing; built **only** against the ports and `tests/fakes.py`, never against the real adapters                                                    |
+| Merge order | 3 of 3 (see `design.md` §5.2)                                                                                                                      |
+| Size        | large; the core of the lab                                                                                                                         |
 
 ## 1. Scope
 
@@ -17,7 +17,6 @@
 - `src/dependency_intelligence/service.py`
 - `tests/test_task_c_cache.py` (new)
 - `tests/test_task_c_scanner.py` (new)
-- `spec/analyze-C.md` (new)
 - `spec/merge.md`: **only** the `## Package C` section
 
 ### Read-only references
@@ -71,7 +70,7 @@ Design reference: `design.md` §3.4 and §3.5, including all three sequence diag
 - [ ] `CancelledError` is never caught as a failure (no `except BaseException` and no bare `except` in `service.py`).
 - [ ] No exception message text from a source appears in a `SourceFailure.detail`.
 - [ ] Your own tests (below) pass, and so do `ruff check`, `ruff format --check` and strict `mypy`.
-- [ ] `spec/analyze-C.md` and the `## Package C` section of `spec/merge.md` are written.
+- [ ] The `## Package C` section of `spec/merge.md` is written.
 
 ## 4. Tests you write
 
@@ -124,40 +123,9 @@ is expected.
    - `Coalesce identical misses and cache complete results`
    - `Scan packages with a bounded limit in input order`
    - `Add cache and scanner tests`
-2. `spec/analyze-C.md`, using the template below.
-3. The `## Package C` section of `spec/merge.md`.
-
-### Template for `spec/analyze-C.md`
-
-```markdown
-# Analysis — Package C (cache & scanner)
-
-## Summary
-What was built, in 3–5 sentences.
-
-## Requirement trace
-| Requirement / Decision | Where implemented (file:function) | Verified by (test) |
-
-## Design as built
-- Cache: state diagram or table of get/put/size behaviour.
-- Scanner: sequence diagrams for (1) miss → load → cache, (2) coalesced waiter,
-  (3) partial failure, (4) cancellation / deadline. Mermaid and/or
-  sequencediagram.org source blocks.
-
-## Concurrency and cancellation evidence
-Which test proves what (StartGate counts, cancelled counters), and why that
-proves overlap or cancellation rather than speed.
-
-## Test evidence
-Command + concise output.
-
-## Deviations from design.md
-None / list with reason.
-
-## Known limitations and risks
-At least: SingleFlight cancels but does not await the flight task (supplied
-code), and the fairness of the per-scanner semaphore (Decision 11).
-```
+2. The `## Package C` section of `spec/merge.md`. Include the known limitations: `SingleFlight` cancels but does not
+   await the flight task (supplied code), and the fairness of the
+   per-scanner semaphore (Decision 11).
 
 ## 7. Prompt for the harness (copy and paste)
 
@@ -167,6 +135,6 @@ code), and the fairness of the per-scanner semaphore (Decision 11).
 > Modify **only** the files listed under "Files you own". Build against the
 > ports and `tests/fakes.py`; do not edit the source adapters, `singleflight.py`
 > or `tests/test_contract.py`. Implement the cache and the scanner, write the tests
-> in §4, run the focused check in §5, then write `spec/analyze-C.md` and the
+> in §4, run the focused check in §5, then write the
 > `## Package C` section of `spec/merge.md`. Return: a diff summary, the check
 > outputs, and any unresolved risk.

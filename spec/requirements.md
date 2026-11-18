@@ -164,11 +164,11 @@ Shared rules for all three adapters:
 
 #### PyPI — `PyPIClient.fetch_metadata`
 
-| ID | Requirement | Origin | State |
-| --- | --- | --- | --- |
-| REQ-PYPI-01 | `GET {base}/pypi/{normalized-name}/json`. | SPEC 4.1 | I |
-| REQ-PYPI-02 | Return `PackageMetadata(latest_version=info.version, requires_python=info.requires_python)`; `requires_python` may be absent → `None`. | SPEC 4.1 | I |
-| REQ-PYPI-03 | A missing, malformed or unparseable version is `invalid_response`, never a successful unknown value. | SPEC 4.1, AC-02 | I (model enforces it) |
+| ID          | Requirement                                                                                                                            | Origin          | State                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------- | --------------------- |
+| REQ-PYPI-01 | `GET {base}/pypi/{normalized-name}/json`.                                                                                              | SPEC 4.1        | I                     |
+| REQ-PYPI-02 | Return `PackageMetadata(latest_version=info.version, requires_python=info.requires_python)`; `requires_python` may be absent → `None`. | SPEC 4.1        | I                     |
+| REQ-PYPI-03 | A missing, malformed or unparseable version is `invalid_response`, never a successful unknown value.                                   | SPEC 4.1, AC-02 | I (model enforces it) |
 
 #### OSV — `OSVClient.fetch_vulnerabilities`
 
@@ -282,8 +282,7 @@ Configuration (from `.env.example` / `bootstrap.Settings`): `REQUEST_TIMEOUT_SEC
 | PRC-08 | Deliverables: repo with ticket commits, completed `DECISIONS.md` + `EVIDENCE.md`, one group video. | HANDOUT |
 
 Our team process on top (agreed in chat): `requirements.md` → `design.md` →
-`task-A/B/C.md` → `analyze-A/B/C.md` (with Mermaid / sequencediagram.org
-diagrams) → `merge.md` (one section per task) → integration by the merger.
+`task-A/B/C.md` → `merge.md` (one section per task) → integration by the merger.
 Three workers, one merger. Package independence matters more than equal size.
 
 ## 6. Verification

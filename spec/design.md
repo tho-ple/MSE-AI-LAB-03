@@ -369,19 +369,15 @@ merge until the focused check is green (PRC-06).
 | `DECISIONS.md` | Merger | Workers propose new decisions in their `merge.md` section; the merger moves them into `DECISIONS.md`. |
 | `EVIDENCE.md` | Merger | Workers may suggest commands in `merge.md`. |
 | `spec/merge.md` | Merger (structure) | Each worker edits **only** their own `## Package X` section. |
-| `spec/analyze-X.md` | Worker X | Only X edits it. |
 | `pyproject.toml`, `uv.lock`, supplied modules, `tests/fakes.py` | nobody | A needed change is proposed in `merge.md`, not made. |
 | `SPEC.md`, `tests/test_contract.py`, `checks/readiness.py` | protected | never edited (PRC-01). |
 
 ### 5.4 Worker deliverables
 
 1. Code in the owned files only, plus the package's own test file(s).
-2. `spec/analyze-X.md` covering: what was built, requirement trace, diagrams
-   (Mermaid and/or a sequencediagram.org source block), test evidence, deviations
-   and risks. The template is in each task file.
-3. The `## Package X` section of `spec/merge.md`: touched files, commits, focused
+2. The `## Package X` section of `spec/merge.md`: touched files, commits, focused
    check output, proposed decisions, things the merger must watch.
-4. Small imperative commits on `task-x`, e.g. `Implement PyPI metadata adapter`.
+3. Small imperative commits on `task-x`, e.g. `Implement PyPI metadata adapter`.
 
 ---
 
@@ -392,6 +388,6 @@ merge until the focused check is green (PRC-06).
 | A worker "fixes" a supplied file to make their test pass | merge conflict, scope creep | §5.3 rule: propose in `merge.md`; the merger reviews diffs against owned files |
 | `ExceptionGroup` leaks out of deps.dev | scanner maps it to `unexpected` instead of the real kind | Decision 5 + B's own test |
 | `CancelledError` swallowed in `_capture` | AC-08 broken (no 504, orphaned calls) | catch `Exception`, never `BaseException`; C's cancellation tests |
-| Flight task cancelled but not awaited by `SingleFlight` | a source call may finish its cleanup after `scan` returns | supplied code; sources still observe cancellation (AC-08). Recorded as a known limitation in C's analysis |
+| Flight task cancelled but not awaited by `SingleFlight` | a source call may finish its cleanup after `scan` returns | supplied code; sources still observe cancellation (AC-08). Recorded as a known limitation in C's `merge.md` section |
 | Per-scanner semaphore lets one large request delay others | latency fairness, not correctness | acceptable for the lab; noted in Decision 11 |
 | `tool_cli.py` pool not bounded by `MAX_HTTP_CONNECTIONS` | more connections than configured on the CLI path | Decision 9, listed in `EVIDENCE.md` |

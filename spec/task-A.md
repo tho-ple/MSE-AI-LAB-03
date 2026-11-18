@@ -1,13 +1,13 @@
 # Task A — PyPI & OSV source adapters
 
-| Field | Value |
-| --- | --- |
-| Goal | Translate PyPI and OSV responses into validated domain records, with attributed failures |
-| Owner | _TBD_ |
-| Branch | `task-a` (from the `main` commit that adds this file) |
-| Depends on | nothing; parallel with B and C |
-| Merge order | 1 of 3 (see `design.md` §5.2) |
-| Size | small |
+| Field       | Value                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| Goal        | Translate PyPI and OSV responses into validated domain records, with attributed failures |
+| Owner       | Johann Hoffmann                                                                          |
+| Branch      | `task-a` (from the `main` commit that adds this file)                                    |
+| Depends on  | nothing; parallel with B and C                                                           |
+| Merge order | 1 of 3 (see `design.md` §5.2)                                                            |
+| Size        | small                                                                                    |
 
 ## 1. Scope
 
@@ -16,7 +16,6 @@
 - `src/dependency_intelligence/sources/pypi.py`
 - `src/dependency_intelligence/sources/osv.py`
 - `tests/test_task_a_pypi_osv.py` (new)
-- `spec/analyze-A.md` (new)
 - `spec/merge.md`: **only** the `## Package A` section
 
 ### Read-only references
@@ -56,7 +55,7 @@ Design reference: `design.md` §3.1 and §3.2.
 - [ ] Every upstream failure surfaces as `SourceRequestError` attributed to `pypi` or `osv`, never as another exception type or a placeholder value.
 - [ ] The contract fixture `{"vulns": [GHSA-1/CVE-1, PYSEC-1/CVE-1,CVE-2, PYSEC-2/CVE-2]}` yields **one** advisory `GHSA-1` with aliases `{CVE-1, CVE-2, PYSEC-1, PYSEC-2}`.
 - [ ] Your own tests (below) pass, and so do `ruff check`, `ruff format --check` and strict `mypy` on your files.
-- [ ] `spec/analyze-A.md` and the `## Package A` section of `spec/merge.md` are written.
+- [ ] The `## Package A` section of `spec/merge.md` is written.
 
 ## 4. Tests you write — `tests/test_task_a_pypi_osv.py`
 
@@ -95,32 +94,7 @@ once A and B are merged. That is expected and not a defect of Task A.
    - `Implement PyPI metadata adapter`
    - `Implement OSV vulnerability adapter`
    - `Add PyPI and OSV adapter tests`
-2. `spec/analyze-A.md`, using the template below.
-3. The `## Package A` section of `spec/merge.md`.
-
-### Template for `spec/analyze-A.md`
-
-```markdown
-# Analysis — Package A (PyPI & OSV adapters)
-
-## Summary
-What was built, in 3–5 sentences.
-
-## Requirement trace
-| Requirement / Decision | Where implemented (file:function) | Verified by (test) |
-
-## Design as built
-Mermaid sequence diagram of one fetch_metadata and one fetch_vulnerabilities call
-(happy path + one failure path). Optionally a sequencediagram.org source block.
-
-## Test evidence
-Command + concise output (pass/fail counts).
-
-## Deviations from design.md
-None / list with reason.
-
-## Risks and open questions
-```
+2. The `## Package A` section of `spec/merge.md`.
 
 ## 7. Prompt for the harness (copy and paste)
 
@@ -129,6 +103,6 @@ None / list with reason.
 > `DECISIONS.md` Decision 8 and `AGENTS.md`. Modify **only** the files listed
 > under "Files you own". Do not edit tests in `tests/test_contract.py`.
 > Implement the PyPI and OSV adapters, write the tests in §4, run the focused
-> check in §5, then write `spec/analyze-A.md` and the `## Package A` section of
+> check in §5, then write the `## Package A` section of
 > `spec/merge.md`. Return: a diff summary, the check outputs, and any unresolved
 > risk.

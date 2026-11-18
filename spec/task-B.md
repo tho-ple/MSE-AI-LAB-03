@@ -1,13 +1,13 @@
 # Task B — deps.dev supply-chain adapter
 
-| Field | Value |
-| --- | --- |
-| Goal | Two **overlapping** deps.dev calls → validated, identity-checked `SupplyChainInformation` |
-| Owner | _TBD_ |
-| Branch | `task-b` (from the `main` commit that adds this file) |
-| Depends on | nothing; parallel with A and C |
-| Merge order | 2 of 3 (see `design.md` §5.2) |
-| Size | small, but concurrency-sensitive |
+| Field       | Value                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| Goal        | Two **overlapping** deps.dev calls → validated, identity-checked `SupplyChainInformation` |
+| Owner       | Michael Auer                                                                              |
+| Branch      | `task-b` (from the `main` commit that adds this file)                                     |
+| Depends on  | nothing; parallel with A and C                                                            |
+| Merge order | 2 of 3 (see `design.md` §5.2)                                                             |
+| Size        | small, but concurrency-sensitive                                                          |
 
 ## 1. Scope
 
@@ -15,7 +15,6 @@
 
 - `src/dependency_intelligence/sources/deps_dev.py`
 - `tests/test_task_b_deps_dev.py` (new)
-- `spec/analyze-B.md` (new)
 - `spec/merge.md`: **only** the `## Package B` section
 
 ### Read-only references
@@ -59,7 +58,7 @@ Design reference: `design.md` §3.3, including the sequence diagram and the
 - [ ] When one endpoint fails, the other in-flight request is cancelled (observable with `StartGate.cancelled`).
 - [ ] A `versionKey` mismatch (name or version) → `invalid_response`; `1.0` vs `1.0.0` counts as a **match**.
 - [ ] Your own tests (below) pass, and so do `ruff check`, `ruff format --check` and strict `mypy`.
-- [ ] `spec/analyze-B.md` and the `## Package B` section of `spec/merge.md` are written.
+- [ ] The `## Package B` section of `spec/merge.md` is written.
 
 ## 4. Tests you write — `tests/test_task_b_deps_dev.py`
 
@@ -100,35 +99,7 @@ A and B are merged.
    - `Implement deps.dev adapter with overlapping requests`
    - `Reject deps.dev responses for a different coordinate`
    - `Add deps.dev adapter tests`
-2. `spec/analyze-B.md`, using the template below.
-3. The `## Package B` section of `spec/merge.md`.
-
-### Template for `spec/analyze-B.md`
-
-```markdown
-# Analysis — Package B (deps.dev adapter)
-
-## Summary
-What was built, in 3–5 sentences.
-
-## Requirement trace
-| Requirement / Decision | Where implemented (file:function) | Verified by (test) |
-
-## Design as built
-Sequence diagram of the two overlapping calls: happy path, and one endpoint
-failing with sibling cancellation. Mermaid and/or a sequencediagram.org block.
-
-## Concurrency evidence
-How the tests prove overlap (StartGate counts), not just speed.
-
-## Test evidence
-Command + concise output.
-
-## Deviations from design.md
-None / list with reason.
-
-## Risks and open questions
-```
+2. The `## Package B` section of `spec/merge.md`.
 
 ## 7. Prompt for the harness (copy and paste)
 
@@ -138,6 +109,6 @@ None / list with reason.
 > "Files you own". Do not edit `tests/test_contract.py` or `upstream_models.py`.
 > Implement the deps.dev adapter with two overlapping requests in an
 > `asyncio.TaskGroup`, the identity check, and `ExceptionGroup` unwrapping. Write
-> the tests in §4, run the focused check in §5, then write `spec/analyze-B.md` and
+> the tests in §4, run the focused check in §5, then write
 > the `## Package B` section of `spec/merge.md`. Return: a diff summary, the check
 > outputs, and any unresolved risk.
