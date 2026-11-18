@@ -179,3 +179,27 @@ Package limit scope (OP-10)
   work.
 - Specification or acceptance criteria affected: SPEC 5, AC-04; REQ-CON-02.
 - Evidence that will verify it: `test_package_limit_and_order_are_preserved`.
+
+## Decision 11
+
+Scope of the package concurrency limit
+
+- Context: SPEC 5 requires a configurable package limit; SPEC 1 asks to bound
+  concurrency and memory. The bootstrap shares one `DependencyScanner` per API
+  process across all requests.
+- Options considered: (a) a new semaphore per `scan()` call, which bounds one
+  request only; (b) one semaphore per scanner instance, which bounds the whole
+  process.
+- Decision: (b). `DependencyScanner.__init__` creates one
+  `asyncio.Semaphore(max_concurrent_packages)`. Every `scan()` acquires a slot
+  around each package's `assess()`. Coalesced waiters hold a slot while
+  waiting, but they cannot deadlock, because the shared flight task itself
+  needs no slot.
+- Consequences and risk: concurrent requests share the limit, so one large
+  request can delay a small one. That is a fairness concern, not a correctness
+  one, and acceptable for the lab.
+- Specification or acceptance criteria affected: SPEC 1, SPEC 5, AC-04;
+  REQ-CON-02.
+- Evidence that will verify it: `test_package_limit_and_order_are_preserved`;
+  Package C's own test, in which two concurrent `scan()` calls on one scanner
+  never exceed the limit together.
