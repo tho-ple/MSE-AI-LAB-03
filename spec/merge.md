@@ -125,8 +125,19 @@ Merge order and gates: `design.md` §5.2.
 
 | Step | Branch | Diff only in owned files? | Focused check | Result / notes |
 | --- | --- | --- | --- | --- |
-| 1 | `task-a` | | `uv run pytest tests/test_task_a_pypi_osv.py` | |
-| 2 | `task-b` | | `uv run pytest -m sources` | |
-| 3 | `task-c` | | `uv run pytest -m "cache or orchestration or transport"` | |
-| 4 | — | — | full quality gate | |
-| 5 | — | — | runtime evidence (`EVIDENCE.md`) | |
+| 1 | `TaskA/PyPi_OSV_source_adapters` → `71c3f23` | yes: `pypi.py`, `osv.py`, own test, own section | `uv run pytest tests/test_task_a_pypi_osv.py` | 10 passed. Full suite 15 passed / 10 failed (B and C still open, expected) |
+| 2 | `task-b` → `bd766f6` | yes: `deps_dev.py`, own test, own section | `uv run pytest -m sources` | 27 passed, including `test_source_adapters_translate_valid_responses` (needs A + B). Full suite 32 passed / 8 failed (C open, expected) |
+| 3 | `task-c` → `9bfcd92` | yes: `cache.py`, `service.py`, own tests, own section | `uv run pytest -m "cache or orchestration or transport"` | 27 passed |
+| 4 | — | — | full quality gate | `ruff check` ✔ · `ruff format --check` ✔ (42 files) · `mypy src tests checks` ✔ (30 files) · `pytest` **58 passed** · readiness READY |
+| 5 | — | — | runtime evidence (`EVIDENCE.md`) | open |
+
+Notes:
+- All three branches start from `8ec7f71`. `spec/merge.md` merged without
+  conflicts (separate sections).
+- Code review before each merge: A and B match `design.md` §3.1–3.3 and
+  Decisions 4, 5, 8. No proposed decisions and no changes to files outside
+  their ownership in any package.
+- Open for the merger: the Package C review point about a `CancelledError`
+  raised by a source (refines REQ-FAIL-05) needs a decision; known
+  limitations (SingleFlight not awaited, Decision 9, Decision 11 fairness) go
+  into the `EVIDENCE.md` risk section.
