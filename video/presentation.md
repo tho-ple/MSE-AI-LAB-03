@@ -10,7 +10,7 @@
 
 ---
 
-## Scene 1 — Mission and method
+## Scene 1 — The mission
 
 ```mermaid
 flowchart LR
@@ -21,14 +21,71 @@ flowchart LR
     P & O & D --> R["one report<br/>complete · partial · failed"]
 ```
 
-```mermaid
-flowchart LR
-    S["SPEC.md"] --> R["requirements.md<br/>~60 traced"] --> DEC["DECISIONS.md<br/>12 decisions"] --> T["3 tickets"] --> M["merge.md"] --> E["EVIDENCE.md"]
-```
+- concurrent · bounded · cached only when complete · useful when a source fails
 
 ---
 
-## Scene 2 — The cut: independence over equal size
+## Scene 2 — Spec-driven: the `spec/` folder
+
+```mermaid
+flowchart LR
+    SPEC["SPEC.md<br/>contract · never edited"] --> REQ
+    subgraph S["spec/"]
+        REQ["requirements.md<br/>~60 numbered requirements<br/>each with its origin"]
+        DES["design.md<br/>architecture · frozen interfaces<br/>cut · merge order"]
+        TA["task-A.md"]
+        TB["task-B.md"]
+        TC["task-C.md"]
+        MER["merge.md<br/>one section per package<br/>+ integration log"]
+    end
+    REQ --> DEC["DECISIONS.md<br/>12 decisions"]
+    REQ --> DES
+    DEC --> DES
+    DES --> TA & TB & TC
+    TA & TB & TC --> MER
+    MER --> EV["EVIDENCE.md<br/>trace AC-01…AC-10"]
+```
+
+**Rule:** an open question becomes a recorded decision **before** code depends on it.
+
+---
+
+## Scene 3 — One package = one task file
+
+| Section of `task-B.md` | What it fixes |
+| --- | --- |
+| header | goal · owner · branch · depends on: nothing · merge order |
+| §1 Scope | files you own · read-only references · **must not touch** |
+| §2 Requirements | REQ-DEPS-01…07 · Decisions 4, 5, 8 |
+| §3 Acceptance | done checklist |
+| §4 Tests | 11 test cases to write (B1–B11) |
+| §5 Focused check | exact `uv run …` commands |
+| §7 Prompt | ready-made prompt for the coding assistant |
+
+Same structure for `task-A.md` and `task-C.md` · each worker writes **only** their
+own section of `merge.md`: commits · check output · proposed decisions · what to watch
+
+---
+
+## Scene 4 — One requirement, end to end
+
+```mermaid
+flowchart LR
+    S["SPEC 4.3<br/>silent on identity"] --> OP["OP-04<br/>open point"]
+    OP --> D["Decision 4<br/>strict"]
+    D --> R["REQ-DEPS-07<br/>versionKey must match"]
+    R --> T["task-B.md<br/>§2 + §3"]
+    T --> C["deps_dev.py<br/>_matches_coordinate"]
+    C --> X["3 tests<br/>wrong package · wrong version<br/>1.0 = 1.0.0"]
+    X --> M["merge.md<br/>Package B"]
+    M --> E["EVIDENCE.md<br/>AC-02"]
+```
+
+Every line of code points back to a requirement, and every requirement to its source.
+
+---
+
+## Scene 5 — The cut: independence over equal size
 
 ```mermaid
 flowchart LR
@@ -55,7 +112,7 @@ flowchart LR
 
 ---
 
-## Scene 3 — AC-03: source concurrency
+## Scene 6 — AC-03: source concurrency
 
 > All three sources start before any may finish; the two deps.dev calls overlap.
 
@@ -81,7 +138,7 @@ sequenceDiagram
 
 ---
 
-## Scene 4 — Who owns concurrency and the cache
+## Scene 7 — Who owns concurrency and the cache
 
 | Concern | Single owner |
 | --- | --- |
@@ -93,7 +150,7 @@ sequenceDiagram
 
 ---
 
-## Scene 5 — Cache reuse and a partial failure
+## Scene 8 — Cache reuse and a partial failure
 
 | Same request twice | 1st | 2nd |
 | --- | --- | --- |
@@ -114,7 +171,7 @@ flowchart LR
 
 ---
 
-## Scene 6 — Quality gate and one diff
+## Scene 9 — Quality gate and one diff
 
 | ruff | format | mypy strict | pytest |
 | :---: | :---: | :---: | :---: |
@@ -132,7 +189,7 @@ flowchart LR
 
 ---
 
-## Scene 7 — Acceptance decision
+## Scene 10 — Acceptance decision
 
 ### ✔ Accept with stated limitation
 
