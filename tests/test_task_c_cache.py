@@ -104,7 +104,7 @@ async def test_concurrent_access_keeps_capacity_bound() -> None:
 
 def test_rejects_non_positive_bounds() -> None:
     """REQ-CACHE-03 — TTL and capacity must be positive."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="ttl_seconds must be positive"):
         AsyncTTLCache[str, str](ttl_seconds=0, max_entries=1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="max_entries must be positive"):
         AsyncTTLCache[str, str](ttl_seconds=1, max_entries=0)

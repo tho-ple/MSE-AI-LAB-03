@@ -1,4 +1,4 @@
-"""Dependency scan orchestration: concurrency, single-flight, caching (SPEC 5–7)."""
+"""Dependency scan orchestration: concurrency, single-flight, caching (SPEC 5-7)."""
 
 from __future__ import annotations
 
@@ -30,6 +30,12 @@ class _Outcome:
 
 
 class DependencyScanner:
+    """Application service shared by the HTTP API and the agent tool.
+
+    Depends only on the ports: three sources, a cache for complete assessments,
+    and a positive limit for packages assessed at the same time.
+    """
+
     def __init__(
         self,
         *,

@@ -67,6 +67,8 @@ async def settle(condition: Callable[[], bool], attempts: int = 20) -> None:
 
 
 class ExplodingVulnerabilitySource:
+    """Raises a non-source error whose message must never reach a report."""
+
     service_name = ServiceName.OSV
 
     async def fetch_vulnerabilities(
@@ -289,6 +291,8 @@ async def test_coalesced_waiters_share_a_partial_result_without_caching() -> Non
 
 
 class CancellingSupplyChainSource:
+    """Raises CancelledError on its own, without the caller being cancelled."""
+
     service_name = ServiceName.DEPS_DEV
 
     async def fetch_supply_chain(self, coordinate: DependencyCoordinate) -> SupplyChainInformation:
