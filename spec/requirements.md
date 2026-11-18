@@ -48,6 +48,65 @@ flowchart LR
     TOOL --> REP
 ```
 
+### 1.1 The components, explained like you're five
+
+Imagine you have a **shopping list of toys** (your project's dependencies). Before
+you play with them, you want to know three things about each toy: *is there a
+newer one?*, *is it broken or dangerous?*, and *who made it and what's inside?*
+Three different **information desks** each know one of those answers.
+
+**The three information desks (external services)**
+
+| Who | ELI5 | What it really is |
+| --- | --- | --- |
+| **PyPI** | The toy shop catalogue: "the newest version of this toy is 2.0, and it needs batteries of size ≥ 3.10." | Python's package index. Tells us the latest version and the Python version it needs. |
+| **OSV** | The safety-recall board: "this toy has a known problem, here is the warning." | The Open Source Vulnerabilities database. Lists known security advisories. |
+| **deps.dev** | The ingredients label: "made by X, this licence, released on this date, contains 3 other toys inside." | Google's deps.dev. Gives licences, publish date and the direct dependencies. |
+| **Fake upstreams** | Pretend desks made of cardboard that always answer the same way, so tests and demos never surprise us. | `fake_upstreams.py`, a local server that imitates all three on port 8090. |
+
+**The doors you can come in through (transports)**
+
+| Component | ELI5 | What it really is |
+| --- | --- | --- |
+| **HTTP API** (`api.py`) | The front door: you hand over your list on paper and get a report back. It checks your handwriting first and refuses messy lists. | `POST /v1/scans`. Validates input (422 if bad) and maps the result to HTTP 200, 503 or 504. |
+| **Agent tool** (`agent_tool.py`) | The back door for robot helpers: the robot may only read **one** specific list file in **its own room**. It is not allowed to sneak into other rooms. | `scan_project_dependencies`. Reads `requirements.lock` inside a trusted workspace and blocks `../`, absolute paths and symlink escapes. |
+| **Manifest parser** (`manifest.py`) | The strict teacher who reads the list file line by line: "toy==exact-number", nothing vague like "any version is fine". | Parses `requirements.lock`. Rejects URLs, extras, wildcards, duplicates and files that are too big. |
+
+**The helpers in the middle (application core)**
+
+| Component | ELI5 | What it really is |
+| --- | --- | --- |
+| **DependencyScanner** (`service.py`) | The **boss**. For each toy it sends three runners to the three desks **at the same time**, waits for them, and staples the answers together. It never sends more than 8 groups of runners at once, and it keeps the toys in the order you wrote them. | The orchestrator: concurrent source calls, package limit, input order, cancellation, cache use. **To build.** |
+| **AsyncTTLCache** (`cache.py`) | A **notebook with a timer**. When all three desks answered, the boss writes the answer down. Next time someone asks about the same toy, the boss reads the notebook instead of running again. Each note expires after 15 minutes, and when the notebook is full, the note nobody looked at for the longest time gets erased. Half-finished answers are **never** written down. | Process-local TTL + LRU cache that stores only complete assessments. **To build.** |
+| **SingleFlight** (`singleflight.py`) | The "**I'm already on it!**" rule. If five kids ask about the same toy at the same moment, only one runner goes, and all five get the same answer. If every kid walks away, the runner is called back. | Coalesces identical in-flight loads (`miss` + `coalesced`) and cancels the load when the last waiter leaves. Supplied. |
+
+**The runners (source adapters)**
+
+| Component | ELI5 | What it really is |
+| --- | --- | --- |
+| **PyPIClient** | Runner to the catalogue desk. Checks that the answer makes sense ("version 2.0", not "version banana"). | `sources/pypi.py`. **To build.** |
+| **OSVClient** | Runner to the recall board. If three warnings are really the same problem under different names, it merges them into one. | `sources/osv.py`, which uses the supplied `merge_advisories`. **To build.** |
+| **DepsDevClient** | Runner to the ingredients desk. It asks **two** questions (label + contents) at the same time and checks the answer is about the right toy. | `sources/deps_dev.py`, with two overlapping calls and the identity check. **To build.** |
+
+**The toolbox everyone shares (supplied infrastructure)**
+
+| Component | ELI5 | What it really is |
+| --- | --- | --- |
+| **JsonHttpClient** (`http.py`) | The **telephone** all runners use. If the line is busy it tries once more, it hangs up on people who talk too long (> 1 MB), and it won't accept gibberish. | Bounded HTTP: ≤ 2 attempts, retry on timeout, 429 and 5xx, a size cap, JSON checks, and mapping errors to failure kinds. |
+| **Upstream models** (`upstream_models.py`) | The **answer-checking stencils**: if a desk's answer doesn't fit the stencil, it's rejected as "nonsense answer". | Strict pydantic schemas that produce `invalid_response` when a response doesn't match. |
+| **Domain** (`domain.py`) | The **official forms** everyone fills in, like "toy name + exact version", "here's what we found", or "this desk failed and here's why". | Immutable records: `DependencyCoordinate`, `PackageAssessment`, `SourceFailure`, `ProjectScanReport`, … |
+| **Ports** (`ports.py`) | The **job descriptions**: "a catalogue runner must be able to do *this*". Anyone who fits the description can do the job, including fake runners in tests. | Protocols that the scanner depends on, which let the three work packages be built independently. |
+| **Reporting** (`reporting.py`) | The **report-card printer**: turns the stapled answers into the same neat sheet for both doors. | `report_to_dict`, the stable JSON output with summary counts and failures. |
+| **Bootstrap** (`bootstrap.py`) | The **person who sets up the room** in the morning: puts the telephone, the notebook and the runners in place and reads the settings. | Composition root that builds everything from environment variables. |
+
+**Two words that matter a lot**
+
+- **`[]` vs `null`**: `[]` means "the recall board said: no problems known". `null`
+  means "we couldn't reach the recall board". Those are **not** the same, and the
+  second one must never be reported as "safe".
+- **complete / partial / failed**: all three desks answered / some answered /
+  nobody answered. Only *complete* answers go in the notebook.
+
 ## 2. What exists vs. what we build
 
 | Area | File(s) | State |
