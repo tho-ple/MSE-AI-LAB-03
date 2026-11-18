@@ -1,7 +1,6 @@
 # Concurrent Dependency Intelligence — Lab 03
 
-> Group video · documentation walkthrough
-> Narration: `video/script.md` (synthetic voice, Kokoro TTS)
+> Group video · documentation walkthrough · narration by a synthetic voice (Kokoro TTS)
 
 | Role | Person | Package |
 | --- | --- | --- |
@@ -9,258 +8,138 @@
 | Worker | Michael | **B**: deps.dev adapter |
 | Worker + Merger | Thomas | **C**: cache & scanner · integration |
 
-Repo: `github.com/tho-ple/MSE-AI-LAB-03` · final state `main` (59 tests green)
-
 ---
 
-## Scene 1 — The mission
-
-**Input:** exact Python dependencies (`fastapi==0.115.0`)
-**Output:** one stable report from three independent sources
+## Scene 1 — Mission and method
 
 ```mermaid
 flowchart LR
-    IN["requirements.lock<br/>or POST /v1/scans"] --> SCN["DependencyScanner"]
-    SCN --> P["PyPI<br/>latest version,<br/>Python requirement"]
-    SCN --> O["OSV<br/>known vulnerabilities"]
-    SCN --> D["deps.dev<br/>licenses, publish date,<br/>direct dependencies"]
-    P & O & D --> R["Report<br/>complete · partial · failed"]
+    IN["exact dependencies<br/>API or requirements.lock"] --> SCN["DependencyScanner"]
+    SCN --> P["PyPI<br/>latest version"]
+    SCN --> O["OSV<br/>vulnerabilities"]
+    SCN --> D["deps.dev<br/>licenses, graph"]
+    P & O & D --> R["one report<br/>complete · partial · failed"]
 ```
-
-- run independent work **concurrently**
-- **bound** resource use
-- reuse **complete** results from a cache
-- stay **useful** when one source fails
-
----
-
-## Scene 2 — How we worked
 
 ```mermaid
 flowchart LR
-    S["SPEC.md<br/>(contract, never edited)"] --> R["spec/requirements.md<br/>~60 traced requirements"]
-    R --> DEC["DECISIONS.md<br/>12 decisions"]
-    R --> DS["spec/design.md<br/>architecture + cut"]
-    DS --> A["task-A.md"] & B["task-B.md"] & C["task-C.md"]
-    A & B & C --> M["spec/merge.md<br/>one section per package"]
-    M --> I["integration → main<br/>one merge at a time"]
-    I --> E["EVIDENCE.md<br/>acceptance decision"]
+    S["SPEC.md"] --> R["requirements.md<br/>~60 traced"] --> DEC["DECISIONS.md<br/>12 decisions"] --> T["3 tickets"] --> M["merge.md"] --> E["EVIDENCE.md"]
 ```
-
-- Every interpretation recorded **before** code depended on it
-- Each ticket: one goal · one owner · own files · focused check · small commits
 
 ---
 
-## Scene 3 — Architecture and the cut
+## Scene 2 — The cut: independence over equal size
 
 ```mermaid
-flowchart TB
-    subgraph T["Transports (supplied)"]
-        API["HTTP API"]
-        TOOL["Agent tool"]
+flowchart LR
+    subgraph A["Package A"]
+        PYPI["PyPI adapter"]
+        OSV["OSV adapter"]
     end
-    subgraph APP["Application — Package C"]
-        SCN["DependencyScanner"]
-        CACHE["AsyncTTLCache"]
+    subgraph B["Package B"]
+        DEPS["deps.dev adapter"]
     end
-    subgraph PORTS["Ports (frozen)"]
-        PR["3 source protocols + cache protocol"]
+    subgraph C["Package C"]
+        SCN["Scanner"]
+        CACHE["Cache"]
     end
-    subgraph ADP["Adapters"]
-        PYPI["PyPI — Package A"]
-        OSV["OSV — Package A"]
-        DEPS["deps.dev — Package B"]
-    end
-    API & TOOL --> SCN
-    SCN --> PR
-    CACHE -. implements .-> PR
-    PYPI & OSV & DEPS -. implement .-> PR
+    PORTS["Ports (frozen interfaces)"]
+    A -. implements .-> PORTS
+    B -. implements .-> PORTS
+    C -- uses only --> PORTS
 ```
 
-| Option | Cut | Cross-dependency | |
-| --- | --- | --- | --- |
-| X | adapters / cache / scanner | scanner test needs real cache | ✘ |
-| **Y** | **PyPI+OSV / deps.dev / cache+scanner** | **none in code** | ✔ |
-| Z | adapters / core / test suite | test suite waits for everyone | ✘ |
-
-**Independence over equal size:** no package imports another package's code.
+- No package imports another package's code
+- Scanner tested only against fake sources
+- Same base commit · **zero code conflicts**
 
 ---
 
-## Scene 4 — Acceptance criterion AC-03: source concurrency
+## Scene 3 — AC-03: source concurrency
 
-> *All three source operations for one uncached package start before any is
-> allowed to finish. The two deps.dev endpoint calls also overlap.*
+> All three sources start before any may finish; the two deps.dev calls overlap.
 
 ```mermaid
 sequenceDiagram
-    participant L as Scanner load
+    participant L as Scanner
     participant P as PyPI
     participant O as OSV
     participant D as deps.dev
-    participant M as metadata
-    participant G as graph
-    par TaskGroup in the scanner (Package C)
-        L->>P: fetch_metadata
+    par TaskGroup
+        L->>P: metadata
     and
-        L->>O: fetch_vulnerabilities
+        L->>O: vulnerabilities
     and
-        L->>D: fetch_supply_chain
-    end
-    par TaskGroup in the adapter (Package B)
-        D->>M: GET version metadata
-    and
-        D->>G: GET dependency graph
+        L->>D: metadata + graph (own TaskGroup)
     end
 ```
 
-**Proof by test:** a `StartGate` only releases once *all* calls have started. If
-any call were sequential, the test would hang and fail.
-
-**Proof at runtime:** every fixture call sleeps **2 s**; one package = 4 calls.
-
-| Sequential | Measured |
-| ---: | ---: |
-| 8 s | **2.10 s** |
-
----
-
-## Scene 5 — Who owns concurrency and the cache
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant C as Caller
-    participant S as assess()
-    participant K as Cache
-    participant F as SingleFlight
-    participant L as Load (3 sources)
-    C->>S: assess(fastapi==0.115.0)
-    S->>K: get(key)
-    alt hit
-        K-->>S: assessment
-        S-->>C: cache_status = hit
-    else miss
-        S->>F: run(key, load)
-        F->>L: one task per key
-        L->>L: 3 sources in parallel
-        opt all three succeeded
-            L->>K: put(key, assessment)
-        end
-        F-->>S: result, shared?
-        S-->>C: miss (started it) / coalesced (joined it)
-    end
-```
-
-| Concern | Owner in the final design |
+| Proof | Result |
 | --- | --- |
-| package limit | **one semaphore per scanner**: process-wide (Decision 11) |
-| identical misses | **SingleFlight**: one load per key |
-| 3 sources of one package | **TaskGroup in the load** |
-| 2 deps.dev calls | **TaskGroup in the adapter** (Package B) |
-| writing the cache | **only the load, only complete results** |
-| cancellation | TaskGroups cancel *and await* children; the last waiter cancels the load |
+| Test: `StartGate` opens only when **all** calls started | passes |
+| Runtime: 4 calls × 2 s each | **2.10 s** instead of 8 s |
 
 ---
 
-## Scene 6 — Cache reuse and a partial failure
+## Scene 4 — Who owns concurrency and the cache
 
-### Same request twice
+| Concern | Single owner |
+| --- | --- |
+| package limit | one semaphore per scanner (process-wide) |
+| identical misses | SingleFlight: one load per key → `miss` / `coalesced` |
+| 3 sources of a package | TaskGroup inside that load |
+| cache writes | only the load, **only complete results** |
+| cancellation | TaskGroups cancel *and await*; last waiter cancels the load |
 
-| | 1st request | 2nd request |
+---
+
+## Scene 5 — Cache reuse and a partial failure
+
+| Same request twice | 1st | 2nd |
 | --- | --- | --- |
-| HTTP | 200 · 0.246 s | 200 · **0.022 s** |
-| cache_status | miss, miss | **hit, hit** |
-| upstream calls | `pypi 2 · osv 2 · deps 2 · graph 2` | **unchanged** |
-
-### `unavailable-osv-demo==1.0.0` (OSV returns 503)
+| cache_status | miss | **hit** |
+| time | 0.246 s | **0.022 s** |
+| upstream calls | 8 | **+0** |
 
 ```mermaid
 flowchart LR
-    P["PyPI ✔<br/>latest 2.0.0"] --> R
-    O["OSV ✘ 503<br/>retried once"] --> R
-    D["deps.dev ✔<br/>MIT, 1 direct dep"] --> R
-    R["HTTP 200 · status partial<br/>vulnerabilities: null<br/>1 failure: osv · unavailable · retryable"]
-    R -. "not cached" .-> X["next scan calls OSV again"]
+    P["PyPI ✔"] --> R
+    O["OSV ✘ 503"] --> R
+    D["deps.dev ✔"] --> R
+    R["HTTP 200 · partial<br/>vulnerabilities: null<br/>1 failure: osv, retryable"]
+    R -. "not cached" .-> X["next scan asks OSV again"]
 ```
 
-| `vulnerabilities: []` | `vulnerabilities: null` |
-| --- | --- |
-| OSV answered: **no known advisory** | OSV gave **no trustworthy answer** |
-| complete, cacheable | partial, **never cached** |
+`[]` = OSV answered, nothing known · `null` = no trustworthy answer
 
 ---
 
-## Scene 7 — Quality gate and one meaningful diff
+## Scene 6 — Quality gate and one diff
 
-| Command | Exit | Result |
-| --- | ---: | --- |
-| `ruff check .` | 0 | all checks passed |
-| `ruff format --check .` | 0 | 42 files formatted |
-| `mypy src tests checks` (strict) | 0 | 30 files, no issues |
-| `pytest` | 0 | **59 passed** (starter: 10 failing) |
+| ruff | format | mypy strict | pytest |
+| :---: | :---: | :---: | :---: |
+| ✔ | ✔ | ✔ | **59 passed** |
 
-### Two fixes found in code review
+**Decision 12, found in code review**
 
 ```diff
-     try:
-         return await operation(), None
 +    except asyncio.CancelledError:
-+        # propagate only when this task was actually asked to cancel
 +        task = asyncio.current_task()
 +        if task is None or task.cancelling():
-+            raise
-+        return None, _unexpected(service, "CancelledError")
-     except SourceRequestError as error:
--        return None, error.failure
-+        return None, replace(error.failure, service=service)
++            raise                                   # real cancellation → 504
++        return None, _unexpected(service, "CancelledError")  # faulty source → partial
 ```
-
-- a **real** cancellation (deadline, cancelled scan) still propagates → HTTP 504
-- a source that cancels **itself** becomes one attributed failure → partial report
-- the scanner, not the adapter, decides **which source** a failure belongs to
-
-**Tests that check the tests:** we broke the scanner on purpose (catching
-every exception, caching partial results, a limit per call, leaking error
-text, wrong cancellation handling); each broken variant turns a test red.
 
 ---
 
-## Scene 8 — Acceptance decision
+## Scene 7 — Acceptance decision
 
 ### ✔ Accept with stated limitation
 
-| AC | Evidence |
-| --- | --- |
-| AC-01 validated input | 422, **0** upstream calls |
-| AC-02 source adapters | 3 adapters, 25 own tests + contract |
-| AC-03 source concurrency | 2.10 s instead of 8 s |
-| AC-04 package limit & order | waves of 2 with limit 2; order kept |
-| AC-05 cache & single-flight | hit, counters unchanged |
-| AC-06 partial failure | 200 · partial · `null` · not cached |
-| AC-07 complete failure | 503 · failed · 3 attributed failures |
-| AC-08 deadline | 504 `scan_timeout` after 1.03 s |
-| AC-09 agent boundary | `../`, absolute path, other filename rejected |
-| AC-10 quality | gate green |
+- AC-01 … AC-10: each has a deterministic test, plus runtime evidence
+- 422 before any upstream call · 503 when all fail · 504 at the deadline
+- agent tool rejects `../`, absolute paths, other filenames
 
-### Remaining production risk
-
-> Only **deterministic fixtures** were exercised. The real PyPI, OSV and
-> deps.dev APIs may differ: rate limits, or a different version spelling
-> hitting our strict identity check (Decision 4).
-
-Also recorded: SingleFlight cancels but does not await a load · shared package
-limit can delay small requests · CLI pool not bounded by our setting.
-
----
-
-## Scene 9 — What we take away
-
-- A **specification trace** made review possible: every line of code points to
-  a requirement or a decision.
-- **Independence beat equal size:** zero merge conflicts in code.
-- **Passing tests were not enough:** overlap, limits and cache reuse only
-  became visible with real timing and real call counters.
-
-**Thank you.**
+**Remaining production risk:** only deterministic fixtures were tested. Real
+services have rate limits and may spell versions differently than our strict
+identity check expects.
