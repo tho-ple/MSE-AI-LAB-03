@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .domain import (
     CacheStatus,
@@ -147,7 +147,9 @@ async def _capture[T](
     try:
         return await operation(), None
     except SourceRequestError as error:
-        return None, error.failure
+        # The scanner knows which source it called, so attribution never depends
+        # on the adapter passing the right ServiceName to the HTTP client.
+        return None, replace(error.failure, service=service)
     except Exception as error:
         # Decision 3: never expose the exception message; it may carry upstream data.
         return None, SourceFailure(

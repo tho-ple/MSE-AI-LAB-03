@@ -301,3 +301,15 @@ async def test_cancellation_is_never_reported_as_a_failure() -> None:
 
     with pytest.raises(asyncio.CancelledError):
         await scanner.assess(DEMO)
+
+
+async def test_failure_is_attributed_to_the_calling_source() -> None:
+    """REQ-FAIL-02: attribution comes from the source the scanner called."""
+    mislabelled = source_failure(ServiceName.PYPI, FailureKind.UNAVAILABLE)
+    scanner = build_scanner(vulnerabilities=FakeVulnerabilitySource(failure=mislabelled))
+
+    result = await scanner.assess(DEMO)
+
+    assert [failure.service for failure in result.failures] == [ServiceName.OSV]
+    assert result.failures[0].kind is FailureKind.UNAVAILABLE
+    assert result.failures[0].retryable
