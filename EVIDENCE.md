@@ -1,5 +1,7 @@
 # Verification evidence and acceptance decision
 
+**Group video (4:23, unlisted):** https://youtu.be/v5zIaBPWbWw. Slides: `video/presentation.md`, narration: `video/script.md`.
+
 Collected on 2026-11-18 on `main` at `afe2a81` (packages A, B, C plus Decision
 12), Windows 11, Python 3.12.16 via uv 0.13.9. All runtime evidence uses the
 deterministic fixtures (`uv run dependency-fake-upstreams`, port 8090). No live
