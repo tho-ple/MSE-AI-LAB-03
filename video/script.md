@@ -1,6 +1,7 @@
 # Video narration script — Lab 03 (at most 6 minutes)
 
 Narration for `video/presentation.md`, written for **Kokoro TTS**.
+Published video (4:23): https://youtu.be/v5zIaBPWbWw
 
 How to use:
 

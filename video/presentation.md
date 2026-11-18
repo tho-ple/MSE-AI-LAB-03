@@ -1,5 +1,7 @@
 # Concurrent Dependency Intelligence — Lab 03
 
+<!-- Published video (4:23): https://youtu.be/v5zIaBPWbWw -->
+
 > Group video · documentation walkthrough · narration by a synthetic voice (Kokoro TTS)
 
 | Role | Person | Package |
