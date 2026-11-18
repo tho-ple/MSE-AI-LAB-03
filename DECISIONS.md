@@ -203,3 +203,31 @@ Scope of the package concurrency limit
 - Evidence that will verify it: `test_package_limit_and_order_are_preserved`;
   Package C's own test, in which two concurrent `scan()` calls on one scanner
   never exceed the limit together.
+
+## Decision 12
+
+Cancellation raised by a source without a cancelled caller
+
+- Context: REQ-FAIL-05 lets `CancelledError` propagate. During review we found
+  a gap. If a source raises `CancelledError` on its own, while nobody cancelled
+  the scan (for example a library bug), the error escapes `scan()`. The API then
+  produces no normal response, and one misbehaving adapter breaks the whole
+  report.
+- Options considered: (a) always propagate, the current behaviour; (b) always
+  convert it to a failure, which would break real cancellation and the
+  deadline (AC-08); (c) propagate only when the running task actually has a
+  pending cancellation request (`asyncio.current_task().cancelling() > 0`), and
+  otherwise report an `unexpected` failure for that source.
+- Decision: (c). A real cancellation, such as a deadline, the last waiter
+  leaving, or a cancelled scan, still propagates unchanged. A spontaneous
+  `CancelledError` from a source becomes
+  `SourceFailure(service, unexpected, retryable=False, detail="unexpected CancelledError")`.
+- Consequences and risk: one faulty adapter yields a partial result instead of
+  an aborted scan. This relies on the Python ≥ 3.11 cancellation-request
+  counter, which `asyncio.TaskGroup` and `asyncio.timeout` maintain.
+- Specification or acceptance criteria affected: SPEC 5, SPEC 7, AC-06, AC-08;
+  refines REQ-FAIL-05.
+- Evidence that will verify it: a scanner test where a source raises
+  `CancelledError` on its own (expects an `unexpected` failure and a partial
+  result); a `_capture` test where the task really is cancelled (expects the
+  task to end cancelled); the existing cancellation contract tests.
